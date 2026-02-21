@@ -1,0 +1,1 @@
+1. flat stats are always worse than % stats.
