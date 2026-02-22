@@ -1,0 +1,44 @@
+schema_version: 1
+
+slots: [weapon, helm, armor, necklace, ring, boots]
+
+rarities: [normal, uncommon, rare, heroic, epic]
+
+# Canonical stat keys (pick ONE naming convention and never change it)
+stats:
+  - atk
+  - atk_pct
+  - hp
+  - hp_pct
+  - def
+  - def_pct
+  - spd
+  - cr
+  - cd
+  - eff
+  - res
+
+# Sets: keep as canonical lowercase keys (expand as needed)
+sets:
+  - health
+  - defense
+  - attack
+  - speed
+  - critical
+  - hit
+  - destruction
+  - lifesteal
+  - counter
+  - resist
+  - unity
+  - rage
+  - immunity
+  - revenge
+  - injury
+  - penetration
+  - protection
+  - torrent
+  - reversal
+  - riposte
+  - warfare
+  - pursuit

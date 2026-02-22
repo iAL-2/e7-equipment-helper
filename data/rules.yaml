@@ -1,0 +1,20 @@
+schema_version: 1
+
+left_side_fixed_mains:
+  weapon: atk
+  helm: hp
+  armor: def
+
+right_side_allowed_mains:
+  necklace: [atk, atk_pct, hp, hp_pct, def, def_pct, cr, cd]
+  ring:     [atk, atk_pct, hp, hp_pct, def, def_pct, eff, res]
+  boots:    [atk, atk_pct, hp, hp_pct, def, def_pct, spd]
+
+constraints:
+  enhance_min: 0
+  enhance_max: 15
+  subs_max: 4
+  subs_unique: true
+  forbid_sub_equal_main: true
+  weapon_unallowed_subs: def, def_pct
+  armor_unallowed_subs: atk, atk_pct

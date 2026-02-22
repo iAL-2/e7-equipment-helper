@@ -1,0 +1,18 @@
+# CanonItem (shape; not a file you edit)
+schema_version: 1
+id: null            # optional
+slot: boots
+set: speed
+rarity: epic
+level: 85
+enhance: 15
+main:
+  stat: spd
+  value: 45
+subs:
+  - { stat: cr, value: 12 }
+  - { stat: cd, value: 20 }
+  - { stat: atk_pct, value: 8 }
+  - { stat: hp_pct, value: 5 }
+locked: null        # optional
+equipped_by: null   # optional

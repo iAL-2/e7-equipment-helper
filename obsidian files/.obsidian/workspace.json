@@ -55,12 +55,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "mod gem behavior.md",
+                "file": "canonical model pipeline.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "mod gem behavior"
+              "title": "canonical model pipeline"
             }
           }
         ],
@@ -228,10 +228,10 @@
   },
   "active": "ec1105f3d6c141f4",
   "lastOpenFiles": [
-    "key constraints and rules.md",
-    "mod gem behavior.md",
-    "canonical model pipeline.md",
     "item parameters.md",
+    "canonical model pipeline.md",
+    "mod gem behavior.md",
+    "key constraints and rules.md",
     "Welcome.md"
   ]
 }
