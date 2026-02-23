@@ -16,5 +16,7 @@ constraints:
   subs_max: 4
   subs_unique: true
   forbid_sub_equal_main: true
-  weapon_unallowed_subs: def, def_pct
-  armor_unallowed_subs: atk, atk_pct
+
+slot_unallowed_subs:
+  weapon: [def, def_pct]
+  armor:  [atk, atk_pct]

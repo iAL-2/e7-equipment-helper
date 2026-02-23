@@ -4,7 +4,7 @@ id: null            # optional
 slot: boots
 set: speed
 rarity: epic
-level: 85
+ilevel: 85
 enhance: 15
 main:
   stat: spd
