@@ -3,17 +3,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 
 import yaml
 
 
-# ---------- Models ----------
+# ---------- Models (Canonical) ----------
 
 @dataclass(frozen=True)
 class StatLine:
     stat: str          # e.g., "atk_pct"
-    value: float       # store numeric; caller decides int/float
+    value: float       # numeric
 
 @dataclass(frozen=True)
 class CanonItem:
@@ -22,12 +22,40 @@ class CanonItem:
     slot: str
     set: str
     rarity: str
-    ilevel: int        # use ilevel instead of "level"
+    ilevel: int
     enhance: int
     main: StatLine
     subs: List[StatLine]
     locked: Optional[bool] = None
     equipped_by: Optional[str] = None
+
+
+# ---------- Models (Parsed / imperfect) ----------
+
+@dataclass(frozen=True)
+class ParsedStatLine:
+    stat: Optional[str]
+    value: Optional[float]
+    confidence: float = 1.0  # 0..1
+
+@dataclass(frozen=True)
+class ParsedItem:
+    schema_version: int = 1
+    id: Optional[str] = None
+    slot: Optional[str] = None
+    set: Optional[str] = None
+    rarity: Optional[str] = None
+    ilevel: Optional[int] = None
+    enhance: Optional[int] = None
+    main: Optional[ParsedStatLine] = None
+    subs: List[ParsedStatLine] = None
+    locked: Optional[bool] = None
+    equipped_by: Optional[str] = None
+
+    def __post_init__(self):
+        # dataclasses don't allow easy default mutable list, so enforce here
+        if self.subs is None:
+            object.__setattr__(self, "subs", [])
 
 
 # ---------- Load YAML ----------
@@ -53,10 +81,11 @@ class Rules:
     slot_unallowed_subs: Dict[str, set[str]]
 
 def load_yaml(path: Path) -> Dict[str, Any]:
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
-# path.read_text(encoding="utf-8")) is functionally the same as 
-# with open(path, "r", encoding=utf-8") as f:
-# yaml.safe_load() is required for a dict/list structure
+    # Reads YAML file text and parses into Python dict/list primitives
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise TypeError(f"Expected mapping at top of {path}, got {type(data).__name__}")
+    return data
 
 def load_vocab(vocab_path: Path) -> Vocab:
     d = load_yaml(vocab_path)
@@ -70,10 +99,8 @@ def load_vocab(vocab_path: Path) -> Vocab:
 
 def load_rules(rules_path: Path) -> Rules:
     d = load_yaml(rules_path)
-
     cons = d.get("constraints", {})
     slot_unallowed = d.get("slot_unallowed_subs", {})  # mapping: slot -> [stats]
-
     return Rules(
         schema_version=int(d["schema_version"]),
         left_side_fixed_mains=dict(d["left_side_fixed_mains"]),
@@ -97,58 +124,79 @@ def _require(cond: bool, msg: str) -> None:
         raise ValidationError(msg)
 
 def validate_canon_item(item: CanonItem, vocab: Vocab, rules: Rules) -> None:
+    """
+    Raises ValidationError on first failure.
+    """
+    errs = validate_canon_item_all(item, vocab, rules)
+    if errs:
+        raise ValidationError("; ".join(errs))
+
+def validate_canon_item_all(item: CanonItem, vocab: Vocab, rules: Rules) -> List[str]:
+    """
+    Returns *all* validation errors (empty list means OK).
+    """
+    errors: List[str] = []
+
+    def add(cond: bool, msg: str) -> None:
+        if not cond:
+            errors.append(msg)
+
     # Schema version sanity
-    _require(item.schema_version == vocab.schema_version == rules.schema_version,
-             f"schema_version mismatch: item={item.schema_version}, vocab={vocab.schema_version}, rules={rules.schema_version}")
+    add(item.schema_version == vocab.schema_version == rules.schema_version,
+        f"schema_version mismatch: item={item.schema_version}, vocab={vocab.schema_version}, rules={rules.schema_version}")
 
     # Basic vocab membership
-    _require(item.slot in vocab.slots, f"invalid slot: {item.slot}")
-    _require(item.set in vocab.sets, f"invalid set: {item.set}")
-    _require(item.rarity in vocab.rarities, f"invalid rarity: {item.rarity}")
+    add(item.slot in vocab.slots, f"invalid slot: {item.slot}")
+    add(item.set in vocab.sets, f"invalid set: {item.set}")
+    add(item.rarity in vocab.rarities, f"invalid rarity: {item.rarity}")
 
     # Enhance bounds
-    _require(rules.enhance_min <= item.enhance <= rules.enhance_max,
-             f"enhance out of range: {item.enhance} (allowed {rules.enhance_min}..{rules.enhance_max})")
+    add(rules.enhance_min <= item.enhance <= rules.enhance_max,
+        f"enhance out of range: {item.enhance} (allowed {rules.enhance_min}..{rules.enhance_max})")
 
     # Stat keys exist
-    _require(item.main.stat in vocab.stats, f"invalid main.stat: {item.main.stat}")
+    add(item.main.stat in vocab.stats, f"invalid main.stat: {item.main.stat}")
     for i, s in enumerate(item.subs):
-        _require(s.stat in vocab.stats, f"invalid subs[{i}].stat: {s.stat}")
+        add(s.stat in vocab.stats, f"invalid subs[{i}].stat: {s.stat}")
 
     # Main stat legality
     if item.slot in rules.left_side_fixed_mains:
         expected = rules.left_side_fixed_mains[item.slot]
-        _require(item.main.stat == expected,
-                 f"illegal main stat for {item.slot}: got {item.main.stat}, expected {expected}")
+        add(item.main.stat == expected,
+            f"illegal main stat for {item.slot}: got {item.main.stat}, expected {expected}")
     else:
         allowed = rules.right_side_allowed_mains.get(item.slot)
-        _require(allowed is not None, f"no right-side main rule for slot: {item.slot}")
-        _require(item.main.stat in allowed,
-                 f"illegal main stat for {item.slot}: {item.main.stat} not in {sorted(allowed)}")
+        add(allowed is not None, f"no right-side main rule for slot: {item.slot}")
+        if allowed is not None:
+            add(item.main.stat in allowed,
+                f"illegal main stat for {item.slot}: {item.main.stat} not in {sorted(allowed)}")
 
     # Subs count
-    _require(len(item.subs) <= rules.subs_max,
-             f"too many substats: {len(item.subs)} (max {rules.subs_max})")
+    add(len(item.subs) <= rules.subs_max,
+        f"too many substats: {len(item.subs)} (max {rules.subs_max})")
 
     # Subs uniqueness
     if rules.subs_unique:
         sub_keys = [s.stat for s in item.subs]
-        _require(len(sub_keys) == len(set(sub_keys)),
-                 f"duplicate substats: {sub_keys}")
+        add(len(sub_keys) == len(set(sub_keys)), f"duplicate substats: {sub_keys}")
 
     # Forbid sub == main
     if rules.forbid_sub_equal_main:
-        _require(all(s.stat != item.main.stat for s in item.subs),
-                 f"substat contains main stat: {item.main.stat}")
+        add(all(s.stat != item.main.stat for s in item.subs),
+            f"substat contains main stat: {item.main.stat}")
 
-    # Slot-specific forbidden subs (weapon/armor rules, etc.)
+    # Slot-specific forbidden subs
     forbidden = rules.slot_unallowed_subs.get(item.slot, set())
     if forbidden:
         bad = [s.stat for s in item.subs if s.stat in forbidden]
-        _require(not bad, f"illegal substats for slot {item.slot}: {bad}")
+        add(not bad, f"illegal substats for slot {item.slot}: {bad}")
+
+    return errors
+
+
+# ---------- Parsing CanonItem from YAML/JSON dict ----------
 
 def parse_canon_item(d: Dict[str, Any]) -> CanonItem:
-    # expects dict shaped like your canonitem.yaml/json
     main = StatLine(stat=str(d["main"]["stat"]), value=float(d["main"]["value"]))
     subs = [StatLine(stat=str(x["stat"]), value=float(x["value"])) for x in d.get("subs", [])]
     return CanonItem(
@@ -166,13 +214,118 @@ def parse_canon_item(d: Dict[str, Any]) -> CanonItem:
     )
 
 
+# ---------- Normalization + Canonicalization ----------
+
+# --- replace your old STAT_ALIASES + norm_token with this ---
+
+STAT_ALIASES: Dict[str, str] = {
+    "atk%": "atk_pct",
+    "hp%": "hp_pct",
+    "def%": "def_pct",
+    "crit": "cr",
+    "crit_rate": "cr",
+    "critdmg": "cd",
+    "crit_dmg": "cd",
+    "effectiveness": "eff",
+    "effect_resist": "res",
+    "effect resist": "res",
+    "speed": "spd",   # <-- keep this ONLY for stat labels, not sets
+}
+
+SET_ALIASES: Dict[str, str] = {
+    "speed_set": "speed",
+    "speedset": "speed",
+    # (optional) add more display-name variants later
+}
+
+def _basic_norm(x: Optional[str]) -> Optional[str]:
+    if x is None:
+        return None
+    return x.strip().lower().replace(" ", "_")
+
+def norm_stat(x: Optional[str]) -> Optional[str]:
+    s = _basic_norm(x)
+    if s is None:
+        return None
+    return STAT_ALIASES.get(s, s)
+
+def norm_set(x: Optional[str]) -> Optional[str]:
+    s = _basic_norm(x)
+    if s is None:
+        return None
+    return SET_ALIASES.get(s, s)
+
+def norm_enum(x: Optional[str]) -> Optional[str]:
+    # for slot/rarity where you mostly just want lowercase/underscore
+    return _basic_norm(x)
+
+def canonicalize(parsed: ParsedItem, vocab: Vocab, rules: Rules) -> Tuple[Optional[CanonItem], List[str]]:
+    """
+    Best-effort: if required fields are missing or invalid, returns (None, errors).
+    No OCR/classifier logic here yet—just normalization + strict validation.
+    """
+    errors: List[str] = []
+
+    # Required scalar fields (domain-aware normalization)
+    slot = norm_enum(parsed.slot)
+    set_name = norm_set(parsed.set)
+    rarity = norm_enum(parsed.rarity)
+
+    if slot is None: errors.append("missing slot")
+    if set_name is None: errors.append("missing set")
+    if rarity is None: errors.append("missing rarity")
+    if parsed.ilevel is None: errors.append("missing ilevel")
+    if parsed.enhance is None: errors.append("missing enhance")
+    if parsed.main is None: errors.append("missing main")
+
+    if errors:
+        return None, errors
+
+    # Main + subs (stat-aware normalization)
+    main_stat = norm_stat(parsed.main.stat)
+    main_val = parsed.main.value
+    if main_stat is None: errors.append("missing main.stat")
+    if main_val is None: errors.append("missing main.value")
+
+    subs: List[StatLine] = []
+    for i, s in enumerate(parsed.subs or []):
+        st = norm_stat(s.stat)
+        if st is None or s.value is None:
+            errors.append(f"missing subs[{i}] fields")
+            continue
+        subs.append(StatLine(stat=st, value=float(s.value)))
+
+    if errors:
+        return None, errors
+
+    item = CanonItem(
+        schema_version=parsed.schema_version,
+        id=parsed.id,
+        slot=slot,
+        set=set_name,
+        rarity=rarity,
+        ilevel=int(parsed.ilevel),
+        enhance=int(parsed.enhance),
+        main=StatLine(stat=main_stat, value=float(main_val)),
+        subs=subs,
+        locked=parsed.locked,
+        equipped_by=parsed.equipped_by,
+    )
+
+    v_errs = validate_canon_item_all(item, vocab, rules)
+    if v_errs:
+        return None, v_errs
+    return item, []
+
+
 # ---------- Quick local test runner ----------
 if __name__ == "__main__":
     root = Path(__file__).resolve().parents[1]
     vocab = load_vocab(root / "data" / "vocab.yaml")
     rules = load_rules(root / "data" / "rules.yaml")
 
-    sample = load_yaml(root / "data" / "canonitem.yaml")  # or wherever you store it
+    # Validate canonical sample
+    sample = load_yaml(root / "data" / "canonitem.yaml")
     item = parse_canon_item(sample)
     validate_canon_item(item, vocab, rules)
     print("OK: CanonItem validated")
