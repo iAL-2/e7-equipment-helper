@@ -1,0 +1,20 @@
+schema_version: 1
+slot: "Boots"
+set: "Speed"
+rarity: "Epic"
+ilevel: 85
+enhance: 15
+main:
+  stat: "Speed"
+  value: 45
+  confidence: 0.93
+subs:
+  - stat: "Crit"
+    value: 12
+    confidence: 0.88
+  - stat: "atk%"
+    value: 8
+    confidence: 0.91
+  - stat: "hp%"
+    value: 5
+    confidence: 0.90

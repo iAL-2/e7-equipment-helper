@@ -1,0 +1,31 @@
+schema_version: 1
+id: null
+
+# messy / not-yet-normalized tokens
+slot: "Boots"
+set: "Speed"
+rarity: "Epic"
+
+ilevel: 85
+enhance: 15
+
+main:
+  stat: "Speed"      # will normalize to spd (stat domain)
+  value: 45
+  confidence: 0.93
+
+subs:
+  - stat: "Crit"     # will normalize to cr
+    value: 12
+    confidence: 0.88
+
+  - stat: "atk%"     # will normalize to atk_pct
+    value: 8
+    confidence: 0.91
+
+  - stat: "hp%"
+    value: null      # simulate OCR miss
+    confidence: 0.35
+
+locked: null
+equipped_by: null

@@ -213,6 +213,36 @@ def parse_canon_item(d: Dict[str, Any]) -> CanonItem:
         equipped_by=d.get("equipped_by"),
     )
 
+def parse_parsed_item(d: Dict[str, Any]) -> ParsedItem:
+    main = None
+    if d.get("main") is not None:
+        main = ParsedStatLine(
+            stat=d["main"].get("stat"),
+            value=(None if d["main"].get("value") is None else float(d["main"]["value"])),
+            confidence=float(d["main"].get("confidence", 1.0)),
+        )
+
+    subs: List[ParsedStatLine] = []
+    for x in d.get("subs", []) or []:
+        subs.append(ParsedStatLine(
+            stat=x.get("stat"),
+            value=(None if x.get("value") is None else float(x["value"])),
+            confidence=float(x.get("confidence", 1.0)),
+        ))
+
+    return ParsedItem(
+        schema_version=int(d.get("schema_version", 1)),
+        id=(None if d.get("id") is None else str(d.get("id"))),
+        slot=d.get("slot"),
+        set=d.get("set"),
+        rarity=d.get("rarity"),
+        ilevel=(None if d.get("ilevel") is None else int(d["ilevel"])),
+        enhance=(None if d.get("enhance") is None else int(d["enhance"])),
+        main=main,
+        subs=subs,
+        locked=d.get("locked"),
+        equipped_by=d.get("equipped_by"),
+    )
 
 # ---------- Normalization + Canonicalization ----------
 

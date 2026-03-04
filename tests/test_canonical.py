@@ -1,3 +1,7 @@
+import sys
+print("CWD:", __import__("os").getcwd())
+print("sys.path[0]:", sys.path[0])
+print("sys.path (first 5):", sys.path[:5])
 # tests/test_canonical.py
 from pathlib import Path
 import pytest
@@ -28,7 +32,7 @@ def test_weapon_cannot_have_def_subs():
         schema_version=1,
         id=None,
         slot="weapon",
-        set="speed",
+        set="speed", 
         rarity="epic",
         ilevel=85,
         enhance=0,
@@ -60,3 +64,15 @@ def test_canonicalize_normalizes_tokens():
     assert item.main.stat == "spd"
     assert item.subs[0].stat == "cr"
     assert item.subs[1].stat == "atk_pct"
+
+def test_parseditem_yaml_roundtrip():
+    root, vocab, rules = _load()
+    from src.canonical import parse_parsed_item
+
+    d = load_yaml(root / "data" / "parseditem.sample.yaml")
+    parsed = parse_parsed_item(d)
+
+    item, errs = canonicalize(parsed, vocab, rules)
+    # This sample has a missing hp% value, so canonicalize should fail
+    assert item is None
+    assert any("missing subs" in e for e in errs)
