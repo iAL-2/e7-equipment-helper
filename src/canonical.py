@@ -248,30 +248,95 @@ def parse_parsed_item(d: Dict[str, Any]) -> ParsedItem:
 
 # --- replace your old STAT_ALIASES + norm_token with this ---
 
+# src/canonical.py (normalization section)
+
 STAT_ALIASES: Dict[str, str] = {
+    # percent shorthands
     "atk%": "atk_pct",
+    "attack%": "atk_pct",
     "hp%": "hp_pct",
+    "health%": "hp_pct",
     "def%": "def_pct",
+    "defense%": "def_pct",
+
+    # flat stats display names
+    "attack": "atk",
+    "atk": "atk",
+    "health": "hp",
+    "hp": "hp",
+    "defense": "def",
+    "def": "def",
+
+    # common UI labels
+    "speed": "spd",
+    "critical_hit_chance": "cr",
     "crit": "cr",
-    "crit_rate": "cr",
-    "critdmg": "cd",
+    "critical_hit_damage": "cd",
     "crit_dmg": "cd",
     "effectiveness": "eff",
+    "effect_resistance": "res",
     "effect_resist": "res",
-    "effect resist": "res",
-    "speed": "spd",   # <-- keep this ONLY for stat labels, not sets
 }
 
 SET_ALIASES: Dict[str, str] = {
+    # strip suffixes like "_set_(0/2)" by mapping common set names
     "speed_set": "speed",
-    "speedset": "speed",
-    # (optional) add more display-name variants later
+    "attack_set": "attack",
+    "health_set": "health",
+    "defense_set": "defense",
+    "critical_set": "critical",
+    "hit_set": "hit",
+    "destruction_set": "destruction",
+    "lifesteal_set": "lifesteal",
+    "counter_set": "counter",
+    "resist_set": "resist",
+    "unity_set": "unity",
+    "rage_set": "rage",
+    "immunity_set": "immunity",
+    "revenge_set": "revenge",
+    "injury_set": "injury",
+    "penetration_set": "penetration",
+    "protection_set": "protection",
+    "torrent_set": "torrent",
+    "reversal_set": "reversal",
+    "riposte_set": "riposte",
+    "warfare_set": "warfare",
+    "pursuit_set": "pursuit",
+}
+
+SLOT_ALIASES: Dict[str, str] = {
+    "weapon": "weapon",
+    "helm": "helm",
+    "helmet": "helm",
+    "armor": "armor",
+    "armour": "armor",
+    "necklace": "necklace",
+    "ring": "ring",
+    "boots": "boots",
+    "boot": "boots",
+}
+
+RARITY_ALIASES: Dict[str, str] = {
+    "normal": "normal",
+    "uncommon": "uncommon",
+    "rare": "rare",
+    "heroic": "heroic",
+    "epic": "epic",
 }
 
 def _basic_norm(x: Optional[str]) -> Optional[str]:
     if x is None:
         return None
-    return x.strip().lower().replace(" ", "_")
+    # EasyOCR tends to emit spaces and punctuation; normalize to a key-like token.
+    s = x.strip().lower()
+    # collapse spaces to underscores
+    s = "_".join(s.split())
+    # remove common punctuation that appears in set strings like "(0/2)"
+    s = s.replace("(", "_").replace(")", "_").replace("/", "_")
+    # collapse multiple underscores
+    while "__" in s:
+        s = s.replace("__", "_")
+    return s.strip("_")
 
 def norm_stat(x: Optional[str]) -> Optional[str]:
     s = _basic_norm(x)
@@ -283,11 +348,84 @@ def norm_set(x: Optional[str]) -> Optional[str]:
     s = _basic_norm(x)
     if s is None:
         return None
-    return SET_ALIASES.get(s, s)
+    # Example: "critical_set_(0/2)" -> "critical_set_0_2" -> we want "critical_set"
+    # Try progressively shorter prefixes split by "_"
+    if s in SET_ALIASES:
+        return SET_ALIASES[s]
+    parts = s.split("_")
+    for k in range(len(parts), 0, -1):
+        cand = "_".join(parts[:k])
+        if cand in SET_ALIASES:
+            return SET_ALIASES[cand]
+    return s  # fallback
 
-def norm_enum(x: Optional[str]) -> Optional[str]:
-    # for slot/rarity where you mostly just want lowercase/underscore
-    return _basic_norm(x)
+def norm_slot(x: Optional[str]) -> Optional[str]:
+    s = _basic_norm(x)
+    if s is None:
+        return None
+
+    # direct alias
+    if s in SLOT_ALIASES:
+        return SLOT_ALIASES[s]
+
+    # compound token: e.g. "heroic_ring" / "epic_ring"
+    parts = _parts(s)
+    slot = _pick_first(parts, set(SLOT_ALIASES.values()) | set(SLOT_ALIASES.keys()))
+    # If slot is one of canonical slots, return it.
+    if slot in {"weapon", "helm", "armor", "necklace", "ring", "boots"}:
+        return slot
+
+    # try mapping each part through aliases
+    for p in parts:
+        if p in SLOT_ALIASES:
+            cand = SLOT_ALIASES[p]
+            if cand in {"weapon", "helm", "armor", "necklace", "ring", "boots"}:
+                return cand
+
+    return s  # fallback (will fail validation)
+
+
+def norm_rarity(x: Optional[str]) -> Optional[str]:
+    s = _basic_norm(x)
+    if s is None:
+        return None
+
+    # direct alias match
+    if s in RARITY_ALIASES:
+        return RARITY_ALIASES[s]
+
+    parts = _parts(s)
+
+    # if the token clearly contains a rarity, return it
+    rar = _pick_first(parts, {"normal", "uncommon", "rare", "heroic", "epic"})
+    if rar is not None:
+        return rar
+
+    # if it's (or contains) only slot words and no rarity, treat as missing rarity
+    slot_words = {"weapon", "helm", "armor", "necklace", "ring", "boots"}
+    if s in slot_words:
+        return None
+    if any(p in slot_words for p in parts) and not any(p in {"normal", "uncommon", "rare", "heroic", "epic"} for p in parts):
+        return None
+
+    # try mapping any part through aliases (covers weird variants like "epic_grade" if you add it)
+    for p in parts:
+        if p in RARITY_ALIASES:
+            return RARITY_ALIASES[p]
+
+    # unknown token -> return as-is (will fail validation upstream)
+    return s
+
+def _parts(s: str) -> list[str]:
+    # split on underscores and drop empties
+    return [p for p in s.split("_") if p]
+
+def _pick_first(parts: list[str], allowed: set[str]) -> Optional[str]:
+    for p in parts:
+        if p in allowed:
+            return p
+    return None
+
 
 def canonicalize(parsed: ParsedItem, vocab: Vocab, rules: Rules) -> Tuple[Optional[CanonItem], List[str]]:
     """
@@ -297,9 +435,9 @@ def canonicalize(parsed: ParsedItem, vocab: Vocab, rules: Rules) -> Tuple[Option
     errors: List[str] = []
 
     # Required scalar fields (domain-aware normalization)
-    slot = norm_enum(parsed.slot)
+    slot = norm_slot(parsed.slot)
     set_name = norm_set(parsed.set)
-    rarity = norm_enum(parsed.rarity)
+    rarity = norm_rarity(parsed.rarity)
 
     if slot is None: errors.append("missing slot")
     if set_name is None: errors.append("missing set")
