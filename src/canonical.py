@@ -427,63 +427,29 @@ def _pick_first(parts: list[str], allowed: set[str]) -> Optional[str]:
     return None
 
 
-def canonicalize(parsed: ParsedItem, vocab: Vocab, rules: Rules) -> Tuple[Optional[CanonItem], List[str]]:
-    """
-    Best-effort: if required fields are missing or invalid, returns (None, errors).
-    No OCR/classifier logic here yet—just normalization + strict validation.
-    """
-    errors: List[str] = []
+# src/canonical.py  (repurpose)
+from typing import List, Tuple, Optional
 
-    # Required scalar fields (domain-aware normalization)
-    slot = norm_slot(parsed.slot)
-    set_name = norm_set(parsed.set)
-    rarity = norm_rarity(parsed.rarity)
+from .schema import CanonItem
 
-    if slot is None: errors.append("missing slot")
-    if set_name is None: errors.append("missing set")
-    if rarity is None: errors.append("missing rarity")
-    if parsed.ilevel is None: errors.append("missing ilevel")
-    if parsed.enhance is None: errors.append("missing enhance")
-    if parsed.main is None: errors.append("missing main")
+def validate_canon_item(item: CanonItem, vocab: dict, rules: dict) -> Tuple[bool, List[str]]:
+    errs: List[str] = []
 
-    if errors:
-        return None, errors
+    # basic range checks
+    if item.enhance < 0 or item.enhance > 15:
+        errs.append(f"enhance out of range: {item.enhance}")
+    if item.ilevel < 0:
+        errs.append(f"ilevel out of range: {item.ilevel}")
 
-    # Main + subs (stat-aware normalization)
-    main_stat = norm_stat(parsed.main.stat)
-    main_val = parsed.main.value
-    if main_stat is None: errors.append("missing main.stat")
-    if main_val is None: errors.append("missing main.value")
+    # slot main-stat constraints (from rules.yaml)
+    # Example conceptually:
+    # allowed_mains = rules["allowed_mains_by_slot"][item.slot]
+    # if item.main.stat not in allowed_mains: errs.append(...)
 
-    subs: List[StatLine] = []
-    for i, s in enumerate(parsed.subs or []):
-        st = norm_stat(s.stat)
-        if st is None or s.value is None:
-            errors.append(f"missing subs[{i}] fields")
-            continue
-        subs.append(StatLine(stat=st, value=float(s.value)))
+    # set/slot/rarity membership checks using vocab.yaml
+    # if item.set not in vocab["sets"]: errs.append(...)
 
-    if errors:
-        return None, errors
-
-    item = CanonItem(
-        schema_version=parsed.schema_version,
-        id=parsed.id,
-        slot=slot,
-        set=set_name,
-        rarity=rarity,
-        ilevel=int(parsed.ilevel),
-        enhance=int(parsed.enhance),
-        main=StatLine(stat=main_stat, value=float(main_val)),
-        subs=subs,
-        locked=parsed.locked,
-        equipped_by=parsed.equipped_by,
-    )
-
-    v_errs = validate_canon_item_all(item, vocab, rules)
-    if v_errs:
-        return None, v_errs
-    return item, []
+    return (len(errs) == 0), errs
 
 
 # ---------- Quick local test runner ----------

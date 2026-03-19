@@ -4,6 +4,40 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Tuple, Optional, Any, Sequence
+from typing import List, Literal, Protocol, Tuple
+
+Slot = Literal["weapon", "helm", "armor", "necklace", "ring", "boots"]
+Rarity = Literal["normal", "uncommon", "rare", "heroic", "epic"]
+
+# Keep as str if you don’t want Literals yet
+SetName = str
+Stat = str
+
+@dataclass(frozen=True)
+class CanonStatLine:
+    stat: Stat
+    value: int
+    confidence: float
+
+@dataclass(frozen=True)
+class CanonItem:
+    schema_version: int
+    slot: Slot
+    set: SetName
+    rarity: Rarity
+    ilevel: int
+    enhance: int
+    main: CanonStatLine
+    subs: Sequence[CanonStatLine]  # 0..4
+
+@dataclass(frozen=True)
+class RecError:
+    field: str
+    reason: str
+
+class Recognizer(Protocol):
+    def recognize(self, cap: RawCapture) -> Tuple[Optional[CanonItem], Sequence[RecError]]:
+        ...
 
 # A rectangle crop: (x, y, w, h) in pixels on the screenshot
 Rect = Tuple[int, int, int, int]

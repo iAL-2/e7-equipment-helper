@@ -3,24 +3,27 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.contracts import RawCapture, validate_regions
 from src.regions_config import REGIONS
-from src.recognizer_easyocr import EasyOCRE7Recognizer
-from src.canonical import Vocab, Rules, load_vocab, load_rules, CanonItem, canonicalize
-
+from src.recognizer_closed import ClosedSetRecognizer
+from src.contracts import RawCapture, validate_regions, CanonItem
+from src.canonical import Vocab, Rules, load_vocab, load_rules, validate_canon_item
 
 def run_once_or_raise(
     cap: RawCapture,
-    recognizer: EasyOCRE7Recognizer,
+    recognizer: ClosedSetRecognizer,
     vocab: Vocab,
     rules: Rules,
 ) -> CanonItem:
     validate_regions(cap.regions)
 
-    parsed = recognizer.recognize(cap)
-    item, errs = canonicalize(parsed, vocab, rules)
-    if errs or item is None:
-        raise RuntimeError(f"Canonicalization failed: {errs}")
+    item, rec_errs = recognizer.recognize(cap)
+    if item is None:
+        raise RuntimeError(f"Recognition failed: {rec_errs}")
+
+    ok, val_errs = validate_canon_item(item, vocab, rules)
+    if not ok:
+        raise RuntimeError(f"Validation failed: {val_errs}")
+
     return item
 
 
@@ -49,7 +52,7 @@ def demo() -> None:
         from src.dump_crops import dump_crops_from_capture
         dump_crops_from_capture(cap, root / "data" / "captures" / "last_run_crops")
 
-    recognizer = EasyOCRE7Recognizer.create()
+    recognizer = ClosedSetRecognizer.create(root=root)
     print("Recognizer type:", type(recognizer))
     item = run_once_or_raise(cap, recognizer, vocab, rules)
     print("OK CanonItem:", item)
