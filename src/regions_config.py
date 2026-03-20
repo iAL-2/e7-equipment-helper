@@ -1,5 +1,5 @@
 # src/regions_config.py
-REGIONS = {
+REGIONS_BAG = {
     "slot": (1440, 256, 200, 75),
     "set": (1312, 824, 529, 49),
     "rarity": (1446, 256, 176, 64),
@@ -15,4 +15,7 @@ REGIONS = {
     "sub3_value": (1767, 625, 80, 35),
     "sub4_stat": (1324, 656, 250, 35),
     "sub4_value": (1750, 657, 80, 35),
+    "anchor": (10, 10, 450, 75)
 }
+
+REGIONS = REGIONS_BAG
