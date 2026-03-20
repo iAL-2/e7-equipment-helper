@@ -1,3 +1,5 @@
 3/19
 - so i've started the shift from OCR to a closed classifier system. i just now begun taking screenshots using the dump system created earlier and now i am cropping images for enhance one by one.... theres no escaping doing some manual work i suppose
 - i didnt realize/forgot the dumps happened even if recognition failed so i had to ask chatgpt to explain that part of the code to me again
+- im just doing template creation... is this really the right way to learn about this pipeline?
+- took most of the day's productivity, but i have finished all sets, rarity, and enhance templates. they are good confidence and work across multiple items. itemlevel might be hard since items can be locked and block most of the itemlevel display,  but perhaps it can be procured with another method by calculating mainstat vs enhancement level with a chart

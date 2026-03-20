@@ -167,7 +167,7 @@ class ClosedSetRecognizer:
         slot_crop = _crop(img, cap.regions["slot"])
         rarity_crop = _crop(img, cap.regions["rarity"])
         set_crop = _crop(img, cap.regions["set"])
-        
+
         enh_crop = _crop(img, cap.regions["enhance"])
         enh_pred, e = self.enhance_rec.predict(enh_crop)
         errs.extend(e)
@@ -186,14 +186,12 @@ class ClosedSetRecognizer:
         if slot_pred is None or rarity_pred is None or set_pred is None:
             return None, errs
 
-        # --- TODO: numeric/stat fields (still closed-set) ---
-        # Implement in this order:
-        # 1) enhance: templates for +0..+15 OR digit templates + parser
-        # 2) ilevel: digit templates + parser
-        # 3) main_stat/sub*_stat: stat token templates (closed)
-        # 4) values: digit templates + parser
+        print("slot:", slot_pred)
+        print("rarity:", rarity_pred)
+        print("set:", set_pred)
+        print("enhance:", enhance, "| raw:", enh_pred)
 
-        errs.append(RecError("enhance", "not implemented"))
+        # enhance is implemented, so don't append a not-implemented error for it
         errs.append(RecError("ilevel", "not implemented"))
         errs.append(RecError("main_stat", "not implemented"))
         errs.append(RecError("main_value", "not implemented"))
