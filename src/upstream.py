@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.regions_config import REGIONS
-from src.recognizer_closed import ClosedSetRecognizer
+from src.regions_config import REGIONS_BAG, REGIONS_DETAIL
+from src.profile_detect import detect_profile
+from src.recognizer_closed import ClosedSetRecognizer, TemplateBank, _load_rgb
 from src.contracts import RawCapture, validate_regions, CanonItem
 from src.canonical import Vocab, Rules, load_vocab, load_rules, validate_canon_item
 
@@ -40,11 +41,18 @@ def demo() -> None:
     shot_path = root / "data" / "captures" / "gear_panel.png"
     serial = adb_screencap_png(cfg, shot_path)
 
+    img = _load_rgb(shot_path)
+    bank = TemplateBank(root / "data" / "recognition" / "templates")
+
+    profile = detect_profile(img, bank)
+    print("Profile:", profile)
+    regions = REGIONS_BAG if profile == "bag" else REGIONS_DETAIL
+
     cap = RawCapture(
         screenshot_path=shot_path,
-        regions=REGIONS,
+        regions=regions,
         timestamp_ms=0,
-        meta={"adb_serial": serial},
+        meta={"adb_serial": serial, "profile": profile},
     )
 
     DEBUG_DUMP_CROPS = True  # flip to True when you want dumps

@@ -5,3 +5,6 @@
 - took most of the day's productivity, but i have finished all sets, rarity, and enhance templates. they are good confidence and work across multiple items. itemlevel might be hard since items can be locked and block most of the itemlevel display,  but perhaps it can be procured with another method by calculating mainstat vs enhancement level with a chart
 - created templates for all digits, but ran into a downstream problem: there are 2 gear screens so the program must be able to detect which one it is on to use the correct capture regions. not only that, need to check if the resolution is correct to allow templates to recognize both capture regions, otherwise will have to double up on the templates in case the size of the symbols change.
 - decided to use an 'anchor' template to differentiate between profiles before continuing: created a new rectangle for the anchor region by adding a new line to regions_config, as well as setting up for the creation of a second region profile
+- created srs/profile_detect.py separately to import later
+- modified upstream to import new regions and detect_profile
+- now reads anchor rectangle and chooses profile, region map of detail enhance screen not created yet
