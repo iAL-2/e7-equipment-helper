@@ -1,0 +1,31 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# --- Virtual env ---
+.venv/
+venv/
+env/
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Project: local artifacts ---
+data/captures/
+data/captures/**
+
+# If you generate model/template artifacts you don't want tracked:
+# data/recognition/templates/
+# data/recognition/models/
+
+# --- Secrets / local config ---
+.env
+.env.*
