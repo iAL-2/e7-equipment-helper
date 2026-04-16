@@ -19,5 +19,22 @@ REGIONS_BAG = {
     "sub4_value": (1750, 657, 80, 35),
 }
 
-REGIONS_DETAIL = {}
+REGIONS_DETAIL = {
+    "slot": (206, 144, 251, 60),
+    "set": (52, 665, 340, 62),
+    "rarity": (207, 145, 248, 58),
+    "ilevel": (62, 144, 40, 32),
+    "e  nhance": (142, 122, 60, 45),
+    "main_stat": (57, 312, 489, 67),
+    "main_value": (353, 315, 184, 63),
+    "sub1_stat": (59, 410, 119, 38),
+    "sub1_value": (484, 414, 58, 33),
+    "sub2_stat": (62, 448, 114, 40),
+    "sub2_value": (486, 453, 55, 30),
+    "sub3_stat": (60, 491, 256, 33),
+    "sub3_value": (484, 487, 58, 38),
+    "sub4_stat": (63, 526, 299, 39),
+    "sub4_value": (483, 527, 64, 38),
+}
+
 REGIONS = REGIONS_BAG

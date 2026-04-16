@@ -65,14 +65,19 @@ class TemplateBank:
         self.root = root
         self._cache: Dict[Path, np.ndarray] = {}
 
-    def tokens(self, field: str) -> List[str]:
-        d = self.root / field
+    def _field_dir(self, field: str, profile: str | None = None) -> Path:
+        if field == "set" and profile is not None:
+            return self.root / field / profile
+        return self.root / field
+
+    def tokens(self, field: str, profile: str | None = None) -> List[str]:
+        d = self._field_dir(field, profile)
         if not d.exists():
             return []
         return sorted(p.stem for p in d.glob("*.png"))
 
-    def gray(self, field: str, token: str) -> Optional[np.ndarray]:
-        p = self.root / field / f"{token}.png"
+    def gray(self, field: str, token: str, profile: str | None = None) -> Optional[np.ndarray]:
+        p = self._field_dir(field, profile) / f"{token}.png"
         if not p.exists():
             return None
         if p not in self._cache:
@@ -94,33 +99,37 @@ class FieldTemplateRecognizer:
         bank: TemplateBank,
         field: str,
         *,
+        profile: str | None = None,
         stride: int = 1,
         min_score: float = 0.20,
         min_conf: float = 0.60,
     ):
         self.bank = bank
         self.field = field
+        self.profile = profile
         self.stride = stride
         self.min_score = min_score
         self.min_conf = min_conf
 
     def predict(self, crop_rgb: np.ndarray) -> Tuple[Optional[TokenPred], List[RecError]]:
-        tokens = self.bank.tokens(self.field)
+        tokens = self.bank.tokens(self.field, self.profile)
         if not tokens:
-            return None, [RecError(self.field, f"no templates for field '{self.field}'")]
+            prof = f" profile='{self.profile}'" if self.profile else ""
+            return None, [RecError(self.field, f"no templates for field '{self.field}'{prof}")]
 
         crop_g = _to_gray(crop_rgb)
 
         scored: List[Tuple[str, float]] = []
         for tok in tokens:
-            templ = self.bank.gray(self.field, tok)
+            templ = self.bank.gray(self.field, tok, self.profile)
             if templ is None:
                 continue
             score = _best_slide_score(crop_g, templ, stride=self.stride)
             scored.append((tok, score))
 
         if not scored:
-            return None, [RecError(self.field, f"no usable templates loaded for '{self.field}'")]
+            prof = f" profile='{self.profile}'" if self.profile else ""
+            return None, [RecError(self.field, f"no usable templates loaded for '{self.field}'{prof}")]
 
         scored.sort(key=lambda x: x[1], reverse=True)
         best_tok, best_score = scored[0]
@@ -132,28 +141,21 @@ class FieldTemplateRecognizer:
 
         return TokenPred(best_tok, best_score, conf), []
 
-
 # ---------- ClosedSetRecognizer ----------
 
 class ClosedSetRecognizer:
     def __init__(self, *, template_root: Path):
         self.bank = TemplateBank(template_root)
 
-        # map to your region keys
         self.slot_rec = FieldTemplateRecognizer(self.bank, "slot", stride=1, min_score=0.20, min_conf=0.60)
         self.rarity_rec = FieldTemplateRecognizer(self.bank, "rarity", stride=1, min_score=0.20, min_conf=0.60)
-        self.set_rec = FieldTemplateRecognizer(self.bank, "set", stride=2, min_score=0.18, min_conf=0.55)
+        self.enhance_rec = FieldTemplateRecognizer(self.bank, "enhance", stride=1, min_score=0.20, min_conf=0.60)
 
-        # later:
-        # self.stat_rec = FieldTemplateRecognizer(self.bank, "stat", ...)
-        # self.enhance_rec = FieldTemplateRecognizer(self.bank, "enhance", ...)  # +0..+15
-        self.enhance_rec = FieldTemplateRecognizer(
-            self.bank,
-            "enhance",
-            stride=1,
-            min_score=0.20,
-            min_conf=0.60,
-        )
+        self.set_rec_by_profile = {
+            "bag": FieldTemplateRecognizer(self.bank, "set", profile="bag", stride=2, min_score=0.18, min_conf=0.55),
+            "detail": FieldTemplateRecognizer(self.bank, "set", profile="detail", stride=2, min_score=0.18, min_conf=0.55),
+        }
+        
     @classmethod
     def create(cls, *, root: Path) -> "ClosedSetRecognizer":
         return cls(template_root=root / "data" / "recognition" / "templates")
@@ -163,12 +165,11 @@ class ClosedSetRecognizer:
 
         img = _load_rgb(Path(cap.screenshot_path))
 
-        # --- closed-set categorical fields ---
         slot_crop = _crop(img, cap.regions["slot"])
         rarity_crop = _crop(img, cap.regions["rarity"])
         set_crop = _crop(img, cap.regions["set"])
-
         enh_crop = _crop(img, cap.regions["enhance"])
+
         enh_pred, e = self.enhance_rec.predict(enh_crop)
         errs.extend(e)
         if enh_pred is None:
@@ -178,10 +179,20 @@ class ClosedSetRecognizer:
             enhance = int(enh_pred.token.replace("+", ""))
         except ValueError:
             return None, errs + [RecError("enhance", f"bad token '{enh_pred.token}'")]
-        
-        slot_pred, e = self.slot_rec.predict(slot_crop); errs.extend(e)
-        rarity_pred, e = self.rarity_rec.predict(rarity_crop); errs.extend(e)
-        set_pred, e = self.set_rec.predict(set_crop); errs.extend(e)
+
+        slot_pred, e = self.slot_rec.predict(slot_crop)
+        errs.extend(e)
+
+        rarity_pred, e = self.rarity_rec.predict(rarity_crop)
+        errs.extend(e)
+
+        profile = getattr(cap, "profile", None)
+        set_rec = self.set_rec_by_profile.get(profile)
+        if set_rec is None:
+            return None, errs + [RecError("set", f"no set recognizer for profile '{profile}'")]
+
+        set_pred, e = set_rec.predict(set_crop)
+        errs.extend(e)
 
         if slot_pred is None or rarity_pred is None or set_pred is None:
             return None, errs
@@ -191,24 +202,8 @@ class ClosedSetRecognizer:
         print("set:", set_pred)
         print("enhance:", enhance, "| raw:", enh_pred)
 
-        # enhance is implemented, so don't append a not-implemented error for it
         errs.append(RecError("ilevel", "not implemented"))
         errs.append(RecError("main_stat", "not implemented"))
         errs.append(RecError("main_value", "not implemented"))
         errs.append(RecError("sub*_stat/value", "not implemented"))
         return None, errs
-
-        # Once implemented, assemble:
-        # main = CanonStatLine(stat=main_stat, value=main_val, confidence=min(...))
-        # subs = [...]
-        # item = CanonItem(
-        #     schema_version=1,
-        #     slot=slot_pred.token,
-        #     set=set_pred.token,
-        #     rarity=rarity_pred.token,
-        #     ilevel=ilevel,
-        #     enhance=enhance,
-        #     main=main,
-        #     subs=subs,
-        # )
-        # return item, errs
