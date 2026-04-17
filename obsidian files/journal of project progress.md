@@ -34,4 +34,13 @@ to-do list
 - separation of 'one item recognition' from screen layout. the recognizer needs to read one item given a specific region, regardless of the item came from.
 - 16 item screen should give 16 item boxes, parsing through the recognizer.
 - define the new 16-item bulk enhancement as a new profile, so 3 profiles total
-- 
+
+progress
+- added auto detection for adb ports instead of using hard coded 5555 port
+- added an exception for recognizing weapon enhancements, since the weapon arts cuts into the crop region
+- correctly linked profile type to prevent returning none
+- begun creation of new detail specific templates; iterating by running the program over and over again to capture the new crops with the correct sets
+
+problems
+- maxed out equipment lead to a 'substat modification page' instead, which the detail profile does not reliably capture. need to reliably identify the detail page with 2 different crops
+- missing unity, rage, revenge, injury, reversal, riposte sets for detail. 22 sets total, have 16.

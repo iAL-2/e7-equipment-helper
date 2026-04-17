@@ -1,6 +1,6 @@
 **Entry:**
 
-- `python -m src.upstream`
+- python -m src.upstream
     
 
 **Flow:**

@@ -150,6 +150,7 @@ class ClosedSetRecognizer:
         self.slot_rec = FieldTemplateRecognizer(self.bank, "slot", stride=1, min_score=0.20, min_conf=0.60)
         self.rarity_rec = FieldTemplateRecognizer(self.bank, "rarity", stride=1, min_score=0.20, min_conf=0.60)
         self.enhance_rec = FieldTemplateRecognizer(self.bank, "enhance", stride=1, min_score=0.20, min_conf=0.60)
+        self.enhance_rec_weapon = FieldTemplateRecognizer(self.bank,"enhance",stride=1,min_score=0.15,min_conf=0.15,)
 
         self.set_rec_by_profile = {
             "bag": FieldTemplateRecognizer(self.bank, "set", profile="bag", stride=2, min_score=0.18, min_conf=0.55),
@@ -170,7 +171,19 @@ class ClosedSetRecognizer:
         set_crop = _crop(img, cap.regions["set"])
         enh_crop = _crop(img, cap.regions["enhance"])
 
+        # slot first so we can special-case weapons
+        slot_pred, e = self.slot_rec.predict(slot_crop)
+        errs.extend(e)
+        if slot_pred is None:
+            return None, errs
+
+        # normal enhance attempt
         enh_pred, e = self.enhance_rec.predict(enh_crop)
+
+        # if normal enhance failed and this is a weapon, retry with relaxed thresholds
+        if enh_pred is None and slot_pred.token == "weapon":
+            enh_pred, e = self.enhance_rec_weapon.predict(enh_crop)
+
         errs.extend(e)
         if enh_pred is None:
             return None, errs
@@ -180,13 +193,13 @@ class ClosedSetRecognizer:
         except ValueError:
             return None, errs + [RecError("enhance", f"bad token '{enh_pred.token}'")]
 
-        slot_pred, e = self.slot_rec.predict(slot_crop)
-        errs.extend(e)
-
         rarity_pred, e = self.rarity_rec.predict(rarity_crop)
         errs.extend(e)
 
         profile = getattr(cap, "profile", None)
+        if profile is None and hasattr(cap, "meta") and isinstance(cap.meta, dict):
+            profile = cap.meta.get("profile")
+
         set_rec = self.set_rec_by_profile.get(profile)
         if set_rec is None:
             return None, errs + [RecError("set", f"no set recognizer for profile '{profile}'")]
@@ -194,7 +207,7 @@ class ClosedSetRecognizer:
         set_pred, e = set_rec.predict(set_crop)
         errs.extend(e)
 
-        if slot_pred is None or rarity_pred is None or set_pred is None:
+        if rarity_pred is None or set_pred is None:
             return None, errs
 
         print("slot:", slot_pred)
