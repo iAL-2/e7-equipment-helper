@@ -107,8 +107,15 @@ def demo() -> None:
     bank = TemplateBank(root / "data" / "recognition" / "templates")
 
     profile = detect_profile(img, bank)
-    print("Profile:", profile)
-    regions = REGIONS_BAG if profile == "bag" else REGIONS_DETAIL
+    if profile == "detail_modify":
+        raise RuntimeError("Modification page not supported yet.")
+
+    if profile == "bag":
+        regions = REGIONS_BAG
+    elif profile == "detail":
+        regions = REGIONS_DETAIL
+    else:
+        raise RuntimeError(f"Unknown profile: {profile}")
 
     cap = RawCapture(
         screenshot_path=shot_path,

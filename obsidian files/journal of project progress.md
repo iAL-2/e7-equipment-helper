@@ -44,3 +44,18 @@ progress
 problems
 - maxed out equipment lead to a 'substat modification page' instead, which the detail profile does not reliably capture. need to reliably identify the detail page with 2 different crops
 - missing unity, rage, revenge, injury, reversal, riposte sets for detail. 22 sets total, have 16.
+
+workflow for next time
+- produce the missing sets either with secret shop refresh or crafting
+- run the main program, python -m src.upstream, crop the new ones for detail page
+- explore have 2 different templates link to the same profile to work around the modification page issue
+- if both bag and detail profile works, it will be time to do the bulk enhancement
+
+4/19
+- finished missing set templates for detail
+- realized modification page was off by a few pixels to reuse detail crop regions, and since its not a target part of the pipeline, created a new profile to raise an exception if mod page is detected
+
+next time
+- begin finishing the rest of the recognizer for the failed fields, ilvl mainstats etc. 
+- make the pipeline produce a canonical item
+- refactor upstream, profile_detect, regions_config to be able to accomodate 16 bulk enhancement profile
