@@ -59,3 +59,6 @@ next time
 - begin finishing the rest of the recognizer for the failed fields, ilvl mainstats etc. 
 - make the pipeline produce a canonical item
 - refactor upstream, profile_detect, regions_config to be able to accomodate 16 bulk enhancement profile
+
+5/2
+- finished templates for bag mains and subs

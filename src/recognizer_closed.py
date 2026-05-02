@@ -11,6 +11,14 @@ from PIL import Image
 from src.contracts import RawCapture, CanonItem, CanonStatLine, RecError
 
 
+SUBSTAT_FIELD_PAIRS = [
+    ("sub1_stat", "sub1_value"),
+    ("sub2_stat", "sub2_value"),
+    ("sub3_stat", "sub3_value"),
+    ("sub4_stat", "sub4_value"),
+]
+
+
 # ---------- image utils ----------
 
 def _load_rgb(path: Path) -> np.ndarray:
@@ -153,7 +161,7 @@ class ClosedSetRecognizer:
         self.enhance_rec_weapon = FieldTemplateRecognizer(self.bank,"enhance",stride=1,min_score=0.15,min_conf=0.15,)
 
         self.set_rec_by_profile = {
-            "bag": FieldTemplateRecognizer(self.bank, "set", profile="bag", stride=2, min_score=0.18, min_conf=0.55),
+            "bag": FieldTemplateRecognizer(self.bank, "set", profile="bag", stride=2, min_score=0.18, min_conf=0.40),
             "detail": FieldTemplateRecognizer(self.bank, "set", profile="detail", stride=2, min_score=0.18, min_conf=0.55),
         }
         
@@ -215,7 +223,6 @@ class ClosedSetRecognizer:
         print("set:", set_pred)
         print("enhance:", enhance, "| raw:", enh_pred)
 
-        errs.append(RecError("ilevel", "not implemented"))
         errs.append(RecError("main_stat", "not implemented"))
         errs.append(RecError("main_value", "not implemented"))
         errs.append(RecError("sub*_stat/value", "not implemented"))
