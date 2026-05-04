@@ -29,3 +29,7 @@ data/captures/**
 # --- Secrets / local config ---
 .env
 .env.*
+
+# --- Obsidian Files ---
+obsidian files/
+obsidian files/**

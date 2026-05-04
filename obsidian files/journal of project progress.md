@@ -73,3 +73,8 @@ next time
 - templates were breaking: answer was to tighten the template crops so less noise from useless space
 - added otherworldly to regions_config and recognizer_closed.py. it is right now a binary check with 1 correct template, score cutoff of 0.75. seems to be working for now
 
+	Profile-aware label recognition is wired and running.
+	Metadata + stat labels are being recognized.
+	Otherworldly is detected with a score cutoff.
+	The next unfinished block is value parsing: main_value and sub*_value.
+

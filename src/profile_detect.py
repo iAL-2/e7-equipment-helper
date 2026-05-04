@@ -6,7 +6,7 @@ import numpy as np
 from src.regions_config import ANCHOR_RECT
 from src.recognizer_closed import _crop, _to_gray, _best_slide_score, TemplateBank
 
-Profile = Literal["bag", "detail", "detail_modify"]
+Profile = Literal["bag", "detail", "detail_modify", "bulk"]
 
 def _canon_profile_token(tok: str) -> Profile:
     if tok in ("detail", "detail__normal"):
