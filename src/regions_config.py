@@ -11,12 +11,13 @@ REGIONS_BAG = {
     "main_value": (1740, 488, 97, 52),
     "sub1_stat": (1321, 557, 250, 35),
     "sub1_value": (1767, 559, 81, 35),
-    "sub2_stat": (1323, 592, 250, 35),
+    "sub2_stat": (1323, 589, 250, 35),
     "sub2_value": (1763, 592, 80, 35),
     "sub3_stat": (1322, 625, 250, 35),
     "sub3_value": (1767, 625, 80, 35),
     "sub4_stat": (1324, 656, 250, 35),
     "sub4_value": (1750, 657, 80, 35),
+    "otherworldly": (1446, 256, 176, 64),
 }
 
 REGIONS_DETAIL = {
@@ -35,6 +36,7 @@ REGIONS_DETAIL = {
     "sub3_value": (484, 487, 58, 38),
     "sub4_stat": (63, 526, 299, 39),
     "sub4_value": (483, 527, 64, 38),
+    "otherworldly": (207, 145, 248, 58),
 }
 
 REGIONS = REGIONS_BAG

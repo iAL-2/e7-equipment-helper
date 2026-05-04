@@ -62,3 +62,14 @@ next time
 
 5/2
 - finished templates for bag mains and subs
+
+next time
+- start wiring recognizer_closed. create separate template recognizers for bag specific
+
+5/3
+- shifted everything to use the same profile/template selection as set
+- refactored recognizer_closed.py to search for the templates depending on profile
+- 
+- templates were breaking: answer was to tighten the template crops so less noise from useless space
+- added otherworldly to regions_config and recognizer_closed.py. it is right now a binary check with 1 correct template, score cutoff of 0.75. seems to be working for now
+
