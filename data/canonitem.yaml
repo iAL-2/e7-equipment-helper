@@ -6,6 +6,7 @@ set: speed
 rarity: epic
 ilevel: 85
 enhance: 15
+otherworldly: true
 main:
   stat: spd
   value: 45

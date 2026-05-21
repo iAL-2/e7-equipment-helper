@@ -78,3 +78,12 @@ next time
 	Otherworldly is detected with a score cutoff.
 	The next unfinished block is value parsing: main_value and sub*_value.
 
+5/21
+- finally churned out the final part of recognizer_closed
+- added digit/value parsing. separate recognizers for digits of main stat and sub stat
+- added missing % template for digits_main/bag
+- main stat now parses 12% -> value=12, has_percent=True
+- added otherworldly: bool to CanonItem
+- recognizer now returns a full CanonItem instead of falling through with (None, [])
+- separated debug messages to cause upstream.py to return a clean terminal output
+- 

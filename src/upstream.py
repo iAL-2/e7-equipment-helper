@@ -88,6 +88,30 @@ def detect_first_adb_endpoint() -> Tuple[str, int, str]:
     # Use dummy localhost values only if your downstream connect code requires them.
     return "127.0.0.1", 5555, serial
 
+#pretty terminal printout helper
+from dataclasses import asdict
+
+def print_item_pretty(item):
+    d = asdict(item)
+
+    print("OK CanonItem")
+    print(f"  slot: {d['slot']}")
+    print(f"  set: {d['set']}")
+    print(f"  rarity: {d['rarity']}")
+    print(f"  ilevel: {d['ilevel']}")
+    print(f"  enhance: +{d['enhance']}")
+    print(f"  otherworldly: {d['otherworldly']}")
+    print("  main:")
+    print(f"    stat: {d['main']['stat']}")
+    print(f"    value: {d['main']['value']}")
+    print(f"    confidence: {d['main']['confidence']:.3f}")
+    print("  subs:")
+
+    for sub in d["subs"]:
+        print(f"    - stat: {sub['stat']}")
+        print(f"      value: {sub['value']}")
+        print(f"      confidence: {sub['confidence']:.3f}")
+
 
 def demo() -> None:
     root = Path(__file__).resolve().parents[1]
@@ -132,7 +156,7 @@ def demo() -> None:
     recognizer = ClosedSetRecognizer.create(root=root)
     print("Recognizer type:", type(recognizer))
     item = run_once_or_raise(cap, recognizer, vocab, rules)
-    print("OK CanonItem:", item)
+    print_item_pretty(item)
 
 
 if __name__ == "__main__":

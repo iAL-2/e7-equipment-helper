@@ -27,6 +27,7 @@ class CanonItem:
     rarity: Rarity
     ilevel: int
     enhance: int
+    otherworldly: bool
     main: CanonStatLine
     subs: Sequence[CanonStatLine]  # 0..4
 
@@ -44,7 +45,7 @@ Rect = Tuple[int, int, int, int]
 
 # Region key contract for one gear detail panel
 REGION_KEYS: Sequence[str] = (
-    "slot", "set", "rarity", "ilevel", "enhance",
+    "slot", "set", "rarity", "ilevel", "enhance", "otherworldly",
     "main_stat", "main_value",
     "sub1_stat", "sub1_value",
     "sub2_stat", "sub2_value",
@@ -64,7 +65,3 @@ class RawCapture:
     timestamp_ms: int
     source: str = "emulator"
     meta: Optional[Dict[str, Any]] = None
-
-class Recognizer:
-    def recognize(self, cap: RawCapture):
-        raise NotImplementedError

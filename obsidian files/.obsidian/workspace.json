@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "canonical model pipeline.md",
+                "file": "journal of project progress.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "canonical model pipeline"
+              "title": "journal of project progress"
             }
           }
         ],
@@ -200,14 +200,14 @@
   },
   "active": "e41dc21de1127dc0",
   "lastOpenFiles": [
+    "mod gem behavior.md",
+    "readme.md",
+    "Untitled.md",
+    "canonical model pipeline.md",
     "easyocr version overview.md",
     "item parameters.md",
     "journal of project progress.md",
-    "readme.md",
-    "mod gem behavior.md",
-    "Untitled.md",
     "z.Gear enhancing pipeline.md",
-    "canonical model pipeline.md",
     "_Current State.md",
     "Untitled 1.md",
     "key constraints and rules.md",
