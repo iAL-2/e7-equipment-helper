@@ -9,9 +9,16 @@ import cv2
 from src.contracts import RawCapture, Rect
 
 
-def dump_crops_from_capture(cap: RawCapture, out_dir: Path) -> Path:
+def dump_crops_from_capture(
+    cap: RawCapture,
+    out_dir: Path,
+    extra_regions: Dict[str, Rect] | None = None,
+) -> Path:
     """
     Dump one PNG per region key using the screenshot_path + regions from RawCapture.
+
+    extra_regions is debug-only. It lets you dump crops like anchor.png
+    without mutating cap.regions or affecting recognition.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -21,7 +28,11 @@ def dump_crops_from_capture(cap: RawCapture, out_dir: Path) -> Path:
 
     h, w = img.shape[:2]
 
-    for key, (x, y, cw, ch) in cap.regions.items():
+    regions = dict(cap.regions)
+    if extra_regions:
+        regions.update(extra_regions)
+
+    for key, (x, y, cw, ch) in regions.items():
         if x < 0 or y < 0 or x + cw > w or y + ch > h:
             raise RuntimeError(f"Region out of bounds: {key}={(x,y,cw,ch)} for image {w}x{h}")
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.regions_config import REGIONS_BAG, REGIONS_DETAIL
+from src.regions_config import REGIONS_BAG, REGIONS_DETAIL, ANCHOR_RECT
 from src.profile_detect import detect_profile
 from src.recognizer_closed import ClosedSetRecognizer, TemplateBank, _load_rgb
 from src.contracts import RawCapture, validate_regions, CanonItem
@@ -133,11 +133,20 @@ def demo() -> None:
     profile = detect_profile(img, bank)
     if profile == "detail_modify":
         raise RuntimeError("Modification page not supported yet.")
+    
+    print(f"Detected profile: {profile}")
 
+#run bulk should return a list of results without continuing the rest of upstream.py
+    if profile == "bulk":
+        results = run_bulk(...)
+        print_bulk_results(results)
+        return
+    
     if profile == "bag":
         regions = REGIONS_BAG
     elif profile == "detail":
         regions = REGIONS_DETAIL
+
     else:
         raise RuntimeError(f"Unknown profile: {profile}")
 
@@ -151,7 +160,7 @@ def demo() -> None:
     DEBUG_DUMP_CROPS = True  # flip to True when you want dumps
     if DEBUG_DUMP_CROPS:
         from src.dump_crops import dump_crops_from_capture
-        dump_crops_from_capture(cap, root / "data" / "captures" / "last_run_crops")
+        dump_crops_from_capture(cap, root / "data" / "captures" / "last_run_crops", extra_regions={"anchor": ANCHOR_RECT})
 
     recognizer = ClosedSetRecognizer.create(root=root)
     print("Recognizer type:", type(recognizer))

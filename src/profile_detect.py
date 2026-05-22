@@ -13,6 +13,8 @@ def _canon_profile_token(tok: str) -> Profile:
         return "detail"
     if tok in ("detail_modify", "detail__modify"):
         return "detail_modify"
+    if tok == "bulk":
+        return "bulk"
     return "bag"
 
 
@@ -26,6 +28,7 @@ def detect_profile(img_rgb: np.ndarray, bank: TemplateBank) -> Profile:
         "detail__normal",
         "detail_modify",
         "detail__modify",
+        "bulk"
     ]
 
     scored: list[tuple[str, float]] = []

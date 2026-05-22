@@ -39,4 +39,49 @@ REGIONS_DETAIL = {
     "otherworldly": (207, 145, 248, 58),
 }
 
-REGIONS = REGIONS_BAG
+
+#bulk
+BULK_COLS = 4
+BULK_ROWS = 4
+
+BULK_GRID_ORIGIN = (18, 218)
+BULK_CARD_SIZE = (360, 180)
+BULK_COL_STEP = 370
+BULK_ROW_STEP = 195
+
+
+def bulk_item_rect(index: int) -> tuple[int, int, int, int]:
+    if not 0 <= index < BULK_COLS * BULK_ROWS:
+        raise IndexError(f"bulk item index out of range: {index}")
+
+    row = index // BULK_COLS
+    col = index % BULK_COLS
+
+    x0, y0 = BULK_GRID_ORIGIN
+    w, h = BULK_CARD_SIZE
+
+    return (
+        x0 + col * BULK_COL_STEP,
+        y0 + row * BULK_ROW_STEP,
+        w,
+        h,
+    )
+
+REGIONS_BULK_ITEM = {
+    "slot": (...),
+    "set": (...),
+    "rarity": (...),
+    "enhance": (...),
+    "main_stat": (...),
+    "main_value": (...),
+    "sub1_stat": (...),
+    "sub1_value": (...)
+}
+
+def bulk_item_regions(index: int) -> dict[str, tuple[int, int, int, int]]:
+    item_x, item_y, _, _ = bulk_item_rect(index)
+
+    return {
+        name: (item_x + x, item_y + y, w, h)
+        for name, (x, y, w, h) in REGIONS_BULK_ITEM.items()
+    }

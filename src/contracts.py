@@ -65,3 +65,9 @@ class RawCapture:
     timestamp_ms: int
     source: str = "emulator"
     meta: Optional[Dict[str, Any]] = None
+
+@dataclass(frozen=True)
+class BulkItemResult:
+    index: int
+    item: Optional[CanonItem]
+    errors: Sequence[RecError]
