@@ -40,14 +40,14 @@ REGIONS_DETAIL = {
 }
 
 
-#bulk
+# bulk
 BULK_COLS = 4
 BULK_ROWS = 4
 
-BULK_GRID_ORIGIN = (18, 218)
-BULK_CARD_SIZE = (360, 180)
-BULK_COL_STEP = 370
-BULK_ROW_STEP = 195
+BULK_GRID_ORIGIN = (23, 190)
+BULK_CARD_SIZE = (360, 190)
+BULK_COL_STEP = 366
+BULK_ROW_STEP = 194
 
 
 def bulk_item_rect(index: int) -> tuple[int, int, int, int]:
@@ -67,21 +67,9 @@ def bulk_item_rect(index: int) -> tuple[int, int, int, int]:
         h,
     )
 
-REGIONS_BULK_ITEM = {
-    "slot": (...),
-    "set": (...),
-    "rarity": (...),
-    "enhance": (...),
-    "main_stat": (...),
-    "main_value": (...),
-    "sub1_stat": (...),
-    "sub1_value": (...)
-}
 
-def bulk_item_regions(index: int) -> dict[str, tuple[int, int, int, int]]:
-    item_x, item_y, _, _ = bulk_item_rect(index)
-
+def bulk_item_rects() -> dict[str, tuple[int, int, int, int]]:
     return {
-        name: (item_x + x, item_y + y, w, h)
-        for name, (x, y, w, h) in REGIONS_BULK_ITEM.items()
+        f"item_{index:02d}": bulk_item_rect(index)
+        for index in range(BULK_COLS * BULK_ROWS)
     }

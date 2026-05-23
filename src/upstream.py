@@ -137,9 +137,14 @@ def demo() -> None:
     print(f"Detected profile: {profile}")
 
 #run bulk should return a list of results without continuing the rest of upstream.py
+    from src.bulk_upstream import debug_dump_bulk_crops
+
     if profile == "bulk":
-        results = run_bulk(...)
-        print_bulk_results(results)
+        debug_dump_bulk_crops(
+            shot_path,
+            root,
+            adb_serial=serial,
+        )
         return
     
     if profile == "bag":
