@@ -73,3 +73,29 @@ def bulk_item_rects() -> dict[str, tuple[int, int, int, int]]:
         f"item_{index:02d}": bulk_item_rect(index)
         for index in range(BULK_COLS * BULK_ROWS)
     }
+
+REGIONS_BULK_ITEM_REL = {
+    #"slot": (0, 0, 0, 0),
+    "set": (93, 92, 45, 47),
+    #"rarity": (0, 0, 0, 0),
+    "enhance": (95, 7, 45, 32),
+    "main_stat": (144, 16, 32, 31),
+    "main_value": (179, 16, 70, 31),
+    "sub1_stat": (144, 55, 30, 31),
+    "sub1_value": (175, 55, 70, 31),
+    "sub2_stat": (144, 86, 30, 31),
+    "sub2_value": (175, 86, 70, 31),
+    "sub3_stat": (144, 117, 30, 31),
+    "sub3_value": (175, 117, 70, 31),
+    "sub4_stat": (144, 148, 30, 31),
+    "sub4_value": (175, 148, 70, 31),
+    #"otherworldly": (0, 0, 0, 0),
+}
+
+def bulk_item_regions(index: int) -> dict[str, tuple[int, int, int, int]]:
+    item_x, item_y, _, _ = bulk_item_rect(index)
+
+    return {
+        name: (item_x + rel_x, item_y + rel_y, w, h)
+        for name, (rel_x, rel_y, w, h) in REGIONS_BULK_ITEM_REL.items()
+    }
