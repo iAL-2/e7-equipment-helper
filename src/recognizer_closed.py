@@ -231,13 +231,15 @@ class DigitSequenceRecognizer:
             profile: str,
             field: str = "digit",
             min_score: float = 0.70,
-            stride: int= 1
+            stride: int= 1,
+            allow_blank: bool = False,
     ):
         self.bank = bank
         self.profile = profile
         self.field = field
         self.min_score = min_score
         self.stride = stride
+        self.allow_blank = allow_blank
 
     def _best_glyph(self, glyph_rgb: np.ndarray) -> Tuple[Optional[TokenPred], List[RecError]]:
         tokens = self.bank.tokens(self.field, self.profile)
@@ -281,6 +283,8 @@ class DigitSequenceRecognizer:
         debug_print(f"[{self.field}/{self.profile}] spans:", spans)
 
         if not spans:
+            if self.allow_blank:
+                return None, []
             return None, [RecError(self.field, "no glyph spans found")]
 
         if len(spans) > 5:
@@ -429,6 +433,7 @@ class ClosedSetRecognizer:
                 field="digits_sub",
                 min_score=0.70,
                 stride=1,
+                allow_blank=True,
             )
                     
     @classmethod
@@ -539,36 +544,57 @@ class ClosedSetRecognizer:
 
         sub_stat_preds = []
         sub_value_preds = []
+        SUBSTAT_OPTIONAL_ICON_MIN_SCORE = 0.40
 
         for stat_key, value_key in SUBSTAT_FIELD_PAIRS:
+            row_errs: list[RecError] = []
+
             stat_crop = _crop(img, cap.regions[stat_key])
             stat_pred, e = sub_stat_rec.predict(stat_crop)
 
             if e:
-                errs.extend(
+                row_errs.extend(
                     RecError(stat_key, err.reason)
                     for err in e
                 )
 
             debug_print(stat_key, "=>", stat_pred)
 
-            if stat_pred is None:
-                return None, errs
+            if stat_pred is not None and stat_pred.score < SUBSTAT_OPTIONAL_ICON_MIN_SCORE:
+                debug_print(
+                    stat_key,
+                    f"low substat icon score {stat_pred.score:.3f}; treating as blank",
+                )
+                stat_pred = None
 
             value_crop = _crop(img, cap.regions[value_key])
             value_pred, e = digit_sub_rec.predict(value_crop)
 
             if e:
-                errs.extend(
+                row_errs.extend(
                     RecError(value_key, err.reason)
                     for err in e
                 )
 
             debug_print(value_key, "=>", value_pred)
 
-            if value_pred is None:
+            # Legal blank row: no stat icon and no value.
+            if stat_pred is None and value_pred is None:
+                continue
+
+            # Illegal partial row: one side exists, the other does not.
+            if stat_pred is None or value_pred is None:
+                errs.extend(row_errs)
+                errs.append(
+                    RecError(
+                        f"{stat_key}/{value_key}",
+                        f"partial substat row: stat={stat_pred}, value={value_pred}",
+                    )
+                )
                 return None, errs
 
+            # Complete row.
+            errs.extend(row_errs)
             sub_stat_preds.append(stat_pred)
             sub_value_preds.append(value_pred)
 

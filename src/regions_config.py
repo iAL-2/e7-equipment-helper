@@ -89,7 +89,7 @@ REGIONS_BULK_ITEM_REL = {
     "sub3_value": (175, 117, 70, 31),
     "sub4_stat": (144, 148, 30, 31),
     "sub4_value": (175, 148, 70, 31),
-    #"otherworldly": (0, 0, 0, 0),
+    "otherworldly": (6, 10, 131, 134), #"otherworldly": (8, 12, 127, 130), tight versiom
 }
 
 def bulk_item_regions(index: int) -> dict[str, tuple[int, int, int, int]]:
